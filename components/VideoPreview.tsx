@@ -65,60 +65,93 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({ genState, aspectRati
         acc += beat.duration;
       }
       if (found !== currentSubtitle) setCurrentSubtitle(found);
-      if (isExporting) setExportProgress(Math.floor((v.currentTime / v.duration) * 100));
+      if (isExporting) setExportProgress(Math.floor((v.currentTime / (v.duration || 1)) * 100));
     };
     v.addEventListener('timeupdate', updateSubtitles);
     return () => v.removeEventListener('timeupdate', updateSubtitles);
   }, [script, genState.videoQueue, isExporting, activeVideo, currentSubtitle]);
 
+  // Utility to wrap text on Canvas
+  const getWrappedLines = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number) => {
+    const words = text.split(' ');
+    const lines = [];
+    let currentLine = words[0];
+
+    for (let i = 1; i < words.length; i++) {
+      const word = words[i];
+      const width = ctx.measureText(currentLine + " " + word).width;
+      if (width < maxWidth) {
+        currentLine += " " + word;
+      } else {
+        lines.push(currentLine);
+        currentLine = word;
+      }
+    }
+    lines.push(currentLine);
+    return lines;
+  };
+
   const drawSubtitle = (ctx: CanvasRenderingContext2D, text: string, x: number, y: number, fontSize: number, style: SubtitleStyle, time: number) => {
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+    
+    // Set Font first to measure accurately
+    let fontFace = '"Inter", sans-serif';
+    let fontWeight = style === 'viral' || style === 'karaoke' ? '900' : style === 'neon' ? '800' : '500';
+    ctx.font = `${fontWeight} ${fontSize}px ${fontFace}`;
 
-    if (style === 'viral') {
-      ctx.font = `900 ${fontSize}px "Inter", sans-serif`;
-      ctx.lineJoin = 'round';
-      ctx.strokeStyle = 'black';
-      ctx.lineWidth = fontSize * 0.2;
-      ctx.strokeText(text, x, y);
-      const grad = ctx.createLinearGradient(x, y - fontSize/2, x, y + fontSize/2);
-      grad.addColorStop(0, '#FFF176'); grad.addColorStop(1, '#FFD600');
-      ctx.fillStyle = grad;
-      ctx.fillText(text, x, y);
-    } 
-    else if (style === 'minimal') {
-      const padding = fontSize * 0.4;
-      const textWidth = ctx.measureText(text).width;
-      ctx.fillStyle = 'rgba(0,0,0,0.6)';
-      ctx.roundRect(x - textWidth/2 - padding, y - fontSize/2 - padding/2, textWidth + padding*2, fontSize + padding, 10);
-      ctx.fill();
-      ctx.font = `500 ${fontSize * 0.8}px "Inter", sans-serif`;
-      ctx.fillStyle = 'white';
-      ctx.fillText(text, x, y);
-    }
-    else if (style === 'neon') {
-      ctx.font = `800 ${fontSize}px "Inter", sans-serif`;
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = `hsl(${(time * 50) % 360}, 100%, 50%)`;
-      ctx.fillStyle = 'white';
-      ctx.fillText(text, x, y);
-    }
-    else if (style === 'karaoke') {
-      ctx.font = `900 ${fontSize}px "Inter", sans-serif`;
-      ctx.fillStyle = 'white';
-      ctx.fillText(text, x, y);
-      
-      const progress = (time % 2) / 2; // Giả lập nhịp karaoke
-      const textWidth = ctx.measureText(text).width;
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(x - textWidth/2, y - fontSize/2, textWidth * progress, fontSize);
-      ctx.clip();
-      ctx.fillStyle = '#ff00ff';
-      ctx.fillText(text, x, y);
-      ctx.restore();
-    }
+    const maxWidth = ctx.canvas.width * 0.85;
+    const lines = getWrappedLines(ctx, text, maxWidth);
+    const lineHeight = fontSize * 1.2;
+    const totalHeight = lines.length * lineHeight;
+    const startY = y - (totalHeight / 2) + (lineHeight / 2);
+
+    lines.forEach((line, index) => {
+      const curY = startY + (index * lineHeight);
+
+      if (style === 'viral') {
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = fontSize * 0.2;
+        ctx.strokeText(line, x, curY);
+        const grad = ctx.createLinearGradient(x, curY - fontSize/2, x, curY + fontSize/2);
+        grad.addColorStop(0, '#FFF176'); grad.addColorStop(1, '#FFD600');
+        ctx.fillStyle = grad;
+        ctx.fillText(line, x, curY);
+      } 
+      else if (style === 'minimal') {
+        const padding = fontSize * 0.4;
+        const textWidth = ctx.measureText(line).width;
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.beginPath();
+        ctx.roundRect(x - textWidth/2 - padding, curY - fontSize/2 - padding/4, textWidth + padding*2, fontSize + padding/2, 10);
+        ctx.fill();
+        ctx.fillStyle = 'white';
+        ctx.fillText(line, x, curY);
+      }
+      else if (style === 'neon') {
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = `hsl(${(time * 50) % 360}, 100%, 50%)`;
+        ctx.fillStyle = 'white';
+        ctx.fillText(line, x, curY);
+      }
+      else if (style === 'karaoke') {
+        ctx.fillStyle = 'white';
+        ctx.fillText(line, x, curY);
+        
+        // Simulating line-by-line karaoke progress based on time
+        const lineProgress = Math.min(1, Math.max(0, (time % 2) - (index * 0.2))); 
+        const textWidth = ctx.measureText(line).width;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x - textWidth/2, curY - fontSize/2, textWidth * lineProgress, fontSize);
+        ctx.clip();
+        ctx.fillStyle = '#ff00ff';
+        ctx.fillText(line, x, curY);
+        ctx.restore();
+      }
+    });
 
     ctx.restore();
   };
@@ -155,7 +188,7 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({ genState, aspectRati
       let acc = 0; let activeBeat = "";
       for (const beat of script) { if (v.currentTime >= acc && v.currentTime < acc + beat.duration) { activeBeat = beat.content; break; } acc += beat.duration; }
       if (activeBeat) {
-        const fs = Math.floor(canvas.width * 0.08);
+        const fs = Math.floor(canvas.width * 0.075); // Slightly smaller font for better wrapping
         drawSubtitle(ctx, activeBeat, canvas.width / 2, canvas.height * 0.75, fs, subtitleStyle, v.currentTime);
       }
       requestAnimationFrame(render);
@@ -176,9 +209,9 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({ genState, aspectRati
 
   const getSubtitleClass = (style: SubtitleStyle) => {
     switch(style) {
-      case 'viral': return 'bg-black/60 text-yellow-300 border-yellow-400/20 text-shadow-black';
+      case 'viral': return 'bg-black/60 text-yellow-300 border-yellow-400/20 text-shadow-black italic uppercase';
       case 'minimal': return 'bg-black/80 text-white border-white/10 font-medium';
-      case 'neon': return 'bg-transparent text-white neon-text animate-pulse';
+      case 'neon': return 'bg-transparent text-white neon-text animate-pulse font-bold';
       case 'karaoke': return 'bg-black/40 text-white border-white/20 font-black';
       default: return '';
     }
@@ -196,8 +229,8 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({ genState, aspectRati
             {isExporting && (
               <div className="absolute inset-0 export-overlay z-50 flex flex-col items-center justify-center p-6 text-white text-center">
                 <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                <h4 className="font-bold mb-2 uppercase tracking-widest text-xs">Đang dán chữ cứng... {exportProgress}%</h4>
-                <p className="text-[10px] opacity-70">Phong cách: {subtitleStyle.toUpperCase()}</p>
+                <h4 className="font-bold mb-2 uppercase tracking-widest text-xs">Đang dán chữ chuẩn... {exportProgress}%</h4>
+                <p className="text-[10px] opacity-70">Sẵn sàng Viral TikTok</p>
               </div>
             )}
           </>
@@ -211,34 +244,43 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({ genState, aspectRati
                    <div className="h-full bg-blue-500 transition-all duration-300" style={{width: `${genState.progress}%`}}></div>
                 </div>
               </div>
-            ) : "Hệ thống Veo 3 đã sẵn sàng"}
+            ) : (
+              <div className="flex flex-col items-center gap-2 opacity-40">
+                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                <p className="text-xs font-medium uppercase tracking-tighter">Sẵn sàng xuất bản Video AI</p>
+              </div>
+            )}
           </div>
         )}
         <div className="absolute top-3 right-3 flex flex-col gap-2 z-30">
-          <button onClick={() => setAspectRatio(aspectRatio === '9:16' ? '16:9' : '9:16')} className="p-2 bg-black/60 backdrop-blur-md rounded-lg text-white hover:bg-blue-600 transition shadow-xl">📱</button>
-          <button onClick={onGenerate} className="p-2 bg-blue-600 rounded-lg text-white hover:bg-blue-500 transition shadow-xl">➕</button>
+          <button onClick={() => setAspectRatio(aspectRatio === '9:16' ? '16:9' : '9:16')} className="p-2 bg-black/60 backdrop-blur-md rounded-lg text-white hover:bg-blue-600 transition shadow-xl" title="Đổi khung hình">
+            {aspectRatio === '9:16' ? '📺' : '📱'}
+          </button>
+          <button onClick={onGenerate} className="p-2 bg-blue-600 rounded-lg text-white hover:bg-blue-500 transition shadow-xl" title="Tạo video mới">➕</button>
         </div>
+        
+        {/* IMPROVED HTML SUBTITLE PREVIEW: Ensures wrapping and no overflow */}
         {currentSubtitle && !isExporting && (
-          <div className="absolute bottom-16 left-0 right-0 px-4 text-center z-20 flex justify-center">
-            <p className={`backdrop-blur-md text-[13px] py-1.5 px-4 rounded-xl font-black border-2 shadow-2xl animate-[pop_0.3s_ease-out] max-w-[90%] leading-tight ${getSubtitleClass(subtitleStyle)}`}>
+          <div className="absolute bottom-16 left-0 right-0 px-4 text-center z-20 flex justify-center items-center pointer-events-none">
+            <div className={`backdrop-blur-md text-[13px] py-1.5 px-4 rounded-xl shadow-2xl animate-[pop_0.3s_ease-out] max-w-full break-words whitespace-normal leading-tight border-2 ${getSubtitleClass(subtitleStyle)}`}>
               {currentSubtitle}
-            </p>
+            </div>
           </div>
         )}
       </div>
       <style>{`
-        @keyframes pop { 0% { transform: scale(0.8); } 70% { transform: scale(1.1); } 100% { transform: scale(1); } }
-        .text-shadow-black { text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+        @keyframes pop { 0% { transform: scale(0.85); opacity: 0; } 70% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+        .text-shadow-black { text-shadow: 0 2px 4px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.5); }
         .neon-text { text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #ff00de, 0 0 30px #ff00de; }
       `}</style>
       <div className="w-full mt-6 space-y-3">
         <button onClick={onGenerate} disabled={genState.isGenerating} className="w-full py-4 bg-white text-slate-900 rounded-xl font-black uppercase hover:bg-blue-50 transition shadow-lg active:scale-95 disabled:opacity-50">
-          {genState.isGenerating ? 'Đang xuất bản...' : 'Sản xuất Video Viral AI'}
+          {genState.isGenerating ? 'Đang sản xuất...' : 'Sản xuất Video Viral AI'}
         </button>
         {genState.videoQueue.length > 0 && (
           <div className="grid grid-cols-1 gap-2">
             <button onClick={downloadFullVideo} disabled={isExporting} className="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-500 transition flex items-center justify-center gap-2">
-              {isExporting ? <span className="animate-pulse">Đang kết xuất...</span> : <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg> Tải Video Dán Chữ Chuẩn</>}
+              {isExporting ? <span className="animate-pulse">Đang kết xuất...</span> : <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg> Tải Video Viral (Đã dán chữ)</>}
             </button>
             <button onClick={downloadRawVideo} disabled={isExporting} className="w-full py-3 bg-slate-800 text-slate-300 rounded-xl font-medium shadow-md hover:bg-slate-700 transition flex items-center justify-center gap-2 border border-slate-700 text-sm">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
