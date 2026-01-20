@@ -7,28 +7,38 @@ export class AIService {
     return new GoogleGenAI({ apiKey: process.env.API_KEY as string });
   }
 
-  async generateScript(topic: string, emotionGoal: string, keywords: string): Promise<ScriptBeat[]> {
+  async generateScript(topic: string, emotionGoal: string, keywords: string, duration: number = 25): Promise<ScriptBeat[]> {
     const ai = this.getAI();
+    
+    // Ước tính số từ: Trung bình 2.5 từ/giây cho giọng đọc tự nhiên
+    const estimatedWordCount = Math.floor(duration * 2.5);
+    const durationLabel = duration <= 20 ? "NGẮN (Reels/Shorts)" : duration >= 60 ? "DÀI (Storytelling)" : "TIÊU CHUẨN";
+
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `Bạn là chuyên gia biên kịch video viral và tối ưu hóa phụ đề (Subtitle Expert) hàng đầu Việt Nam.
       Chủ đề: "${topic}".
       Mạch cảm xúc mong muốn: "${emotionGoal}".
       Từ khóa SEO: "${keywords}".
+      
+      YÊU CẦU QUAN TRỌNG VỀ THỜI LƯỢNG:
+      - Thời lượng mục tiêu: ${duration} giây (${durationLabel}).
+      - Tổng độ dài kịch bản phải xấp xỉ ${estimatedWordCount} từ.
+      - Bạn phải kiểm soát số lượng beats và độ dài câu chữ sao cho khi đọc lên sẽ khớp với ${duration} giây.
 
       NHIỆM VỤ:
-      1. Viết kịch bản video ngắn (20-45s) chia làm các phân đoạn (beats).
-      2. MỖI PHÂN ĐOẠN PHẢI LÀ MỘT CÂU PHỤ ĐỀ HOÀN CHỈNH, NGẮN GỌN (tối đa 10 từ).
-      3. Đảm bảo ngôn từ Tiếng Việt chuẩn xác tuyệt đối, không sai chính tả, dấu câu đặt đúng chỗ để khi hiển thị dính trên video sẽ cực kỳ chuyên nghiệp.
+      1. Viết kịch bản video chia làm các phân đoạn (beats).
+      2. MỖI PHÂN ĐOẠN PHẢI LÀ MỘT CÂU PHỤ ĐỀ HOÀN CHỈNH, NGẮN GỌN (tối đa 10-12 từ).
+      3. Đảm bảo ngôn từ Tiếng Việt chuẩn xác tuyệt đối, không sai chính tả.
       4. TRÍCH XUẤT THÔNG ĐIỆP CHÍNH: Nếu lời nhắc có chứa nội dung cụ thể, bạn PHẢI biến nó thành câu phụ đề đắt giá nhất.
       
       PHÂN LOẠI BEATS:
-      - HOOK: Câu đầu tiên gây sốc hoặc tò mò.
+      - HOOK: Câu đầu tiên gây sốc hoặc tò mò (0-3s).
       - BODY: Diễn giải nội dung chính, mỗi beat là một ý tưởng hình ảnh.
       - PAYOFF: Câu chốt giá trị hoặc kết quả.
-      - CTA: Kêu gọi hành động (Follow, Tim, Mua ngay).
+      - CTA: Kêu gọi hành động (Follow, Tim, Mua ngay) - Beat cuối cùng.
 
-      ĐỊNH DẠNG TRẢ VỀ: JSON array các object { type, content, duration }.`,
+      ĐỊNH DẠNG TRẢ VỀ: JSON array các object { type, content, duration }. Tổng duration của các beat cộng lại phải xấp xỉ ${duration}.`,
       config: {
         responseMimeType: 'application/json',
         responseSchema: {

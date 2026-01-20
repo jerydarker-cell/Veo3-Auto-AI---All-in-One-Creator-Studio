@@ -44,6 +44,12 @@ export const Editor: React.FC<EditorProps> = ({
     setRefImage(null);
   };
 
+  const DURATIONS = [
+    { val: 20, label: '20 Giây', desc: 'Shorts/Reels' },
+    { val: 30, label: '30 Giây', desc: 'Tiêu chuẩn' },
+    { val: 60, label: '60 Giây', desc: 'Kể chuyện' },
+  ];
+
   return (
     <div className="flex-1 space-y-6">
       {activeTab === 'editor' && (
@@ -66,6 +72,26 @@ export const Editor: React.FC<EditorProps> = ({
               >
                 {EMOTION_GOALS.map(g => <option key={g} value={g}>{g}</option>)}
               </select>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <label className="text-sm font-medium text-slate-400">Thời lượng Video (Ước tính)</label>
+            <div className="grid grid-cols-3 gap-3">
+              {DURATIONS.map((dur) => (
+                <button
+                  key={dur.val}
+                  onClick={() => setProject({...project, duration: dur.val})}
+                  className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-1 ${
+                    project.duration === dur.val
+                    ? 'bg-blue-600/20 border-blue-500 text-blue-400 shadow-lg shadow-blue-500/10'
+                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600'
+                  }`}
+                >
+                  <span className="font-black text-lg">{dur.val}s</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-70">{dur.desc}</span>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -179,7 +205,7 @@ export const Editor: React.FC<EditorProps> = ({
             className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl font-bold shadow-lg hover:scale-[1.01] active:scale-[0.99] transition disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {isGenerating ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>}
-            {isGenerating ? 'Đang tinh chỉnh phụ đề...' : 'Tạo Kịch Bản Phụ Đề AI'}
+            {isGenerating ? `Tạo Kịch Bản ${project.duration}s` : 'Tạo Kịch Bản Phụ Đề AI'}
           </button>
         </div>
       )}

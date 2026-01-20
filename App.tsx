@@ -69,11 +69,11 @@ const App: React.FC = () => {
 
   const handleGenerateScript = async () => {
     if (!project.prompt) return;
-    setGenState(prev => ({ ...prev, isGenerating: true, status: 'AI đang biên kịch & tối ưu phụ đề...' }));
+    setGenState(prev => ({ ...prev, isGenerating: true, status: `AI đang biên kịch ${project.duration}s & tối ưu phụ đề...` }));
     try {
-      const script = await aiService.generateScript(project.prompt, project.emotionGoal, project.seoKeywords);
+      const script = await aiService.generateScript(project.prompt, project.emotionGoal, project.seoKeywords, project.duration);
       setProject(prev => ({ ...prev, script }));
-      setGenState(prev => ({ ...prev, isGenerating: false, status: 'Kịch bản viral sẵn sàng!' }));
+      setGenState(prev => ({ ...prev, isGenerating: false, status: `Kịch bản ${project.duration}s sẵn sàng!` }));
     } catch (error: any) {
       setGenState(prev => ({ ...prev, isGenerating: false, error: error.message }));
     }
