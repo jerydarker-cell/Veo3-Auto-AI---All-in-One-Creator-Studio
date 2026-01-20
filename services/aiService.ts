@@ -1,22 +1,34 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { ProjectConfig, ScriptBeat } from "../types";
 
 export class AIService {
   private getAI() {
-    return new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+    return new GoogleGenAI({ apiKey: process.env.API_KEY as string });
   }
 
-  // Generate Script using Gemini 3 Flash
   async generateScript(topic: string, emotionGoal: string, keywords: string): Promise<ScriptBeat[]> {
     const ai = this.getAI();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Tạo kịch bản video viral cho chủ đề: "${topic}". 
-      Mạch cảm xúc: "${emotionGoal}". 
+      contents: `Bạn là chuyên gia biên kịch video viral và tối ưu hóa phụ đề (Subtitle Expert) hàng đầu Việt Nam.
+      Chủ đề: "${topic}".
+      Mạch cảm xúc mong muốn: "${emotionGoal}".
       Từ khóa SEO: "${keywords}".
-      Yêu cầu cấu trúc JSON mảng các đối tượng: { type: "HOOK" | "BODY" | "PAYOFF" | "CTA", content: string, duration: number }. 
-      Tổng thời lượng khoảng 25-60 giây. Ngôn ngữ: Tiếng Việt.`,
+
+      NHIỆM VỤ:
+      1. Viết kịch bản video ngắn (20-45s) chia làm các phân đoạn (beats).
+      2. MỖI PHÂN ĐOẠN PHẢI LÀ MỘT CÂU PHỤ ĐỀ HOÀN CHỈNH, NGẮN GỌN (tối đa 10 từ).
+      3. Đảm bảo ngôn từ Tiếng Việt chuẩn xác tuyệt đối, không sai chính tả, dấu câu đặt đúng chỗ để khi hiển thị dính trên video sẽ cực kỳ chuyên nghiệp.
+      4. TRÍCH XUẤT THÔNG ĐIỆP CHÍNH: Nếu lời nhắc có chứa nội dung cụ thể, bạn PHẢI biến nó thành câu phụ đề đắt giá nhất.
+      
+      PHÂN LOẠI BEATS:
+      - HOOK: Câu đầu tiên gây sốc hoặc tò mò.
+      - BODY: Diễn giải nội dung chính, mỗi beat là một ý tưởng hình ảnh.
+      - PAYOFF: Câu chốt giá trị hoặc kết quả.
+      - CTA: Kêu gọi hành động (Follow, Tim, Mua ngay).
+
+      ĐỊNH DẠNG TRẢ VỀ: JSON array các object { type, content, duration }.`,
       config: {
         responseMimeType: 'application/json',
         responseSchema: {
@@ -42,35 +54,22 @@ export class AIService {
     }
   }
 
-  // Generate Video using Veo 3
   async generateVideo(config: ProjectConfig, referenceImageBase64?: string) {
     const ai = this.getAI();
+    const characterContext = referenceImageBase64 ? "Strictly maintain the character appearance from the reference image. " : "";
+    const prompt = `${characterContext}High-end commercial style video. Aspect ratio ${config.aspectRatio}. Scene: ${config.prompt}. Style: ${config.seoKeywords}. Cinematography: Masterpiece, 8k, fluid cinematic motion, professional lighting.`;
     
-    // Explicitly instruct character consistency if a reference image is present
-    const characterContext = referenceImageBase64 
-      ? "Duy trì sự đồng nhất của nhân vật chính từ hình ảnh tham khảo trong suốt video. "
-      : "";
-    
-    const prompt = `${characterContext}${config.prompt}. Style: ${config.seoKeywords}. Mạch cảm xúc: ${config.emotionGoal}. Đảm bảo nhân vật chính xuất hiện xuyên suốt.`;
-    
-    const videoPayload: any = {
+    const veoAspectRatio = config.aspectRatio === '16:9' ? '16:9' : '9:16';
+
+    return await ai.models.generateVideos({
       model: 'veo-3.1-fast-generate-preview',
       prompt: prompt,
       config: {
         numberOfVideos: 1,
         resolution: config.resolution,
-        aspectRatio: config.aspectRatio
+        aspectRatio: veoAspectRatio
       }
-    };
-
-    if (referenceImageBase64) {
-      videoPayload.image = {
-        imageBytes: referenceImageBase64.split(',')[1],
-        mimeType: 'image/png'
-      };
-    }
-
-    return await ai.models.generateVideos(videoPayload);
+    });
   }
 
   async pollVideoStatus(operation: any) {
@@ -78,14 +77,13 @@ export class AIService {
     return await ai.operations.getVideosOperation({ operation });
   }
 
-  // Generate Voiceover using TTS for a specific text
   async generateSpeech(text: string, voiceName: string): Promise<string> {
     const ai = this.getAI();
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: `Đọc văn bản sau một cách tự nhiên, truyền cảm và đồng nhất giọng điệu: ${text}` }] }],
+      contents: [{ parts: [{ text: `Hãy đọc đoạn văn Tiếng Việt này thật truyền cảm, tự nhiên, ngắt nghỉ đúng nhịp để khớp hoàn hảo với phụ đề chạy trên video: "${text}"` }] }],
       config: {
-        responseModalities: ['AUDIO' as any],
+        responseModalities: [Modality.AUDIO],
         speechConfig: {
           voiceConfig: {
             prebuiltVoiceConfig: { voiceName: voiceName as any }
@@ -93,9 +91,7 @@ export class AIService {
         }
       }
     });
-
-    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-    return base64Audio || '';
+    return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || '';
   }
 }
 

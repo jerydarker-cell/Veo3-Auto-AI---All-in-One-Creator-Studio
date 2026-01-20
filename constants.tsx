@@ -1,5 +1,5 @@
 
-import { VoicePreset, VideoTemplate } from './types';
+import { VoicePreset, VideoTemplate, AspectRatio, SubtitleStyle } from './types';
 
 export const VOICE_PRESETS: VoicePreset[] = [
   { id: 'v1', name: 'Nam MC Tin Tức', gender: 'male', style: 'Chuyên nghiệp, đĩnh đạc', voiceName: 'Kore' },
@@ -9,6 +9,21 @@ export const VOICE_PRESETS: VoicePreset[] = [
   { id: 'v5', name: 'Giọng Kể Chuyện', gender: 'male', style: 'Huyền bí, trầm ấm', voiceName: 'Fenrir' },
   { id: 'v6', name: 'Nữ Thời Trang', gender: 'female', style: 'Sang trọng, lôi cuốn', voiceName: 'Zephyr' },
   { id: 'v7', name: 'Nam Podcast', gender: 'male', style: 'Thân thiện, gần gũi', voiceName: 'Kore' },
+];
+
+export const ASPECT_RATIOS: { id: AspectRatio; label: string; icon: string }[] = [
+  { id: '9:16', label: '9:16 (TikTok)', icon: '📱' },
+  { id: '16:9', label: '16:9 (Youtube)', icon: '📺' },
+  { id: '1:1', label: '1:1 (Square)', icon: '🟦' },
+  { id: '4:3', label: '4:3 (Classic)', icon: '🖼️' },
+  { id: '21:9', label: '21:9 (Ultrawide)', icon: '🎞️' },
+];
+
+export const SUBTITLE_STYLES: { id: SubtitleStyle; label: string; description: string }[] = [
+  { id: 'viral', label: 'Viral Pop', description: 'Chữ vàng viền đen, hiệu ứng phóng to.' },
+  { id: 'minimal', label: 'Tối Giản', description: 'Chữ trắng nền đen mờ, thanh lịch.' },
+  { id: 'neon', label: 'Neon Glow', description: 'Chữ phát sáng đa màu sắc cực ngầu.' },
+  { id: 'karaoke', label: 'Karaoke', description: 'Hiệu ứng đổi màu chữ theo nhịp.' },
 ];
 
 export const VIDEO_TEMPLATES: VideoTemplate[] = [
@@ -38,7 +53,7 @@ export const VIDEO_TEMPLATES: VideoTemplate[] = [
     name: 'Thời Trang Phụ Kiện',
     description: 'Sống động, bắt mắt, phù hợp với xu hướng TikTok Fashion.',
     previewUrl: 'https://picsum.photos/seed/fashion/400/600',
-    promptPrefix: 'dynamic fashion showcase, high speed cuts, stylish models, trendy accessories, vibrant colors, runway style, '
+    promptPrefix: 'dynamic fashion showcase, high speed cuts, stylish models, trendy accessories, vibrant colors, vibrant atmosphere, '
   },
   {
     id: 'kids_cartoon',
@@ -56,10 +71,4 @@ export const EMOTION_GOALS = [
   'Năng lượng & Động lực',
   'Bí ẩn & Tò mò',
   'Sang trọng & Đẳng cấp'
-];
-
-export const TEXT_ANIMATIONS = [
-  { id: 'shake', name: 'Lắc lưu', description: 'Hiệu ứng rung chuyển nhẹ nhàng' },
-  { id: 'beat', name: 'Nhịp đập', description: 'Hiệu ứng phóng to thu nhỏ theo nhịp' },
-  { id: 'fade', name: 'Mờ ảo', description: 'Hiệu ứng hiện hình mượt mà' }
 ];

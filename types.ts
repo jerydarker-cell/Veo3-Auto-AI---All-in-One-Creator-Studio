@@ -1,6 +1,7 @@
 
-export type AspectRatio = '9:16' | '16:9';
+export type AspectRatio = '9:16' | '16:9' | '1:1' | '4:3' | '21:9' | 'Custom';
 export type Resolution = '720p' | '1080p';
+export type SubtitleStyle = 'viral' | 'minimal' | 'neon' | 'karaoke';
 
 export interface ScriptBeat {
   type: 'HOOK' | 'BODY' | 'PAYOFF' | 'CTA';
@@ -30,6 +31,8 @@ export interface ProjectConfig {
   prompt: string;
   negativePrompt: string;
   aspectRatio: AspectRatio;
+  customWidth?: number;
+  customHeight?: number;
   resolution: Resolution;
   script: ScriptBeat[];
   voiceId: string;
@@ -37,6 +40,7 @@ export interface ProjectConfig {
   emotionGoal: string;
   seoKeywords: string;
   duration: number;
+  subtitleStyle: SubtitleStyle;
 }
 
 export interface GenerationState {
@@ -45,4 +49,5 @@ export interface GenerationState {
   progress: number;
   error: string | null;
   videoUrl: string | null;
+  videoQueue: string[];
 }
