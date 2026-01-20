@@ -1,0 +1,8 @@
+{
+  "name": "Veo3 Auto AI - All-in-One Creator Studio",
+  "description": "Nền tảng sáng tạo video AI toàn diện: tạo video Veo 3, lồng tiếng đa dạng, kịch bản virus và quản lý dự án thông minh.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
