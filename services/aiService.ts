@@ -56,12 +56,11 @@ export class AIService {
 
   async generateVideo(config: ProjectConfig, referenceImageBase64?: string) {
     const ai = this.getAI();
-    const characterContext = referenceImageBase64 ? "Strictly maintain the character appearance from the reference image. " : "";
-    const prompt = `${characterContext}High-end commercial style video. Aspect ratio ${config.aspectRatio}. Scene: ${config.prompt}. Style: ${config.seoKeywords}. Cinematography: Masterpiece, 8k, fluid cinematic motion, professional lighting.`;
+    const prompt = `High-end cinematic video. Scene: ${config.prompt}. Style: ${config.seoKeywords}. Cinematography: Masterpiece, 8k, fluid motion, professional lighting.`;
     
     const veoAspectRatio = config.aspectRatio === '16:9' ? '16:9' : '9:16';
 
-    return await ai.models.generateVideos({
+    const videoParams: any = {
       model: 'veo-3.1-fast-generate-preview',
       prompt: prompt,
       config: {
@@ -69,7 +68,21 @@ export class AIService {
         resolution: config.resolution,
         aspectRatio: veoAspectRatio
       }
-    });
+    };
+
+    // Nếu có ảnh tham khảo, truyền vào tham số 'image' để đảm bảo đồng nhất
+    if (referenceImageBase64) {
+      // Tách mimeType và data từ chuỗi base64 (ví dụ: data:image/png;base64,iVBOR...)
+      const matches = referenceImageBase64.match(/^data:([^;]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        videoParams.image = {
+          mimeType: matches[1],
+          imageBytes: matches[2]
+        };
+      }
+    }
+
+    return await ai.models.generateVideos(videoParams);
   }
 
   async pollVideoStatus(operation: any) {

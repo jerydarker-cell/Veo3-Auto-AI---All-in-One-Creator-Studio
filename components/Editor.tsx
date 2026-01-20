@@ -25,6 +25,25 @@ export const Editor: React.FC<EditorProps> = ({
     }
   };
 
+  const downloadOriginalImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!refImage) return;
+    
+    const link = document.createElement('a');
+    link.href = refImage;
+    link.download = `veo3_original_ref_${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const removeImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setRefImage(null);
+  };
+
   return (
     <div className="flex-1 space-y-6">
       {activeTab === 'editor' && (
@@ -111,12 +130,46 @@ export const Editor: React.FC<EditorProps> = ({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-400">Ảnh tham khảo (Đồng nhất nhân vật)</label>
+            <label className="text-sm font-medium text-slate-400">Ảnh tham khảo (Tải ảnh gốc & Giữ nhân vật)</label>
             <div className="flex gap-4 items-center">
-              <label className="flex-1 h-28 border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center hover:border-blue-500 cursor-pointer transition overflow-hidden bg-slate-900/50">
-                {refImage ? <img src={refImage} alt="Reference" className="w-full h-full object-cover" /> : <span className="text-xs text-slate-500">Giữ nhân vật xuyên suốt các cảnh</span>}
-                <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
-              </label>
+              <div className="relative flex-1 group">
+                <label className="block h-32 border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center hover:border-blue-500 cursor-pointer transition overflow-hidden bg-slate-900/50">
+                  {refImage ? (
+                    <img src={refImage} alt="Reference" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                      <svg className="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <span className="text-xs text-slate-500">Kéo thả hoặc chọn ảnh gốc</span>
+                    </div>
+                  )}
+                  <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                </label>
+                
+                {refImage && (
+                  <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={downloadOriginalImage}
+                      className="p-2 bg-blue-600/90 hover:bg-blue-500 text-white rounded-lg shadow-lg transition-transform hover:scale-110"
+                      title="Tải ảnh gốc"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                    </button>
+                    <button 
+                      onClick={removeImage}
+                      className="p-2 bg-red-600/90 hover:bg-red-500 text-white rounded-lg shadow-lg transition-transform hover:scale-110"
+                      title="Xóa ảnh"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
