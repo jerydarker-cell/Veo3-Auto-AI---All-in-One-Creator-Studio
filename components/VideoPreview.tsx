@@ -163,6 +163,17 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({ genState, aspectRati
     render(); recorder.start(); v.onended = () => recorder.stop();
   };
 
+  const downloadRawVideo = () => {
+    if (genState.videoQueue.length === 0) return;
+    const latestUrl = genState.videoQueue[genState.videoQueue.length - 1];
+    const link = document.createElement('a');
+    link.href = latestUrl;
+    link.download = `veo3_raw_${Date.now()}.mp4`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const getSubtitleClass = (style: SubtitleStyle) => {
     switch(style) {
       case 'viral': return 'bg-black/60 text-yellow-300 border-yellow-400/20 text-shadow-black';
@@ -225,9 +236,17 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({ genState, aspectRati
           {genState.isGenerating ? 'Đang xuất bản...' : 'Sản xuất Video Viral AI'}
         </button>
         {genState.videoQueue.length > 0 && (
-          <button onClick={downloadFullVideo} disabled={isExporting} className="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-500 transition flex items-center justify-center gap-2">
-            {isExporting ? <span className="animate-pulse">Đang kết xuất...</span> : <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg> Tải Video Dán Chữ Chuẩn</>}
-          </button>
+          <div className="grid grid-cols-1 gap-2">
+            <button onClick={downloadFullVideo} disabled={isExporting} className="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-500 transition flex items-center justify-center gap-2">
+              {isExporting ? <span className="animate-pulse">Đang kết xuất...</span> : <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg> Tải Video Dán Chữ Chuẩn</>}
+            </button>
+            <button onClick={downloadRawVideo} disabled={isExporting} className="w-full py-3 bg-slate-800 text-slate-300 rounded-xl font-medium shadow-md hover:bg-slate-700 transition flex items-center justify-center gap-2 border border-slate-700 text-sm">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg> 
+              Tải Video Gốc (Không Phụ Đề)
+            </button>
+          </div>
         )}
       </div>
     </div>
