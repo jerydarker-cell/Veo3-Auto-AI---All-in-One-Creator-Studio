@@ -10,7 +10,6 @@ export class AIService {
   async generateScript(topic: string, emotionGoal: string, keywords: string, duration: number = 25): Promise<ScriptBeat[]> {
     const ai = this.getAI();
     
-    // Ước tính số từ: Trung bình 2.5 từ/giây cho giọng đọc tự nhiên
     const estimatedWordCount = Math.floor(duration * 2.5);
     const durationLabel = duration <= 20 ? "NGẮN (Reels/Shorts)" : duration >= 60 ? "DÀI (Storytelling)" : "TIÊU CHUẨN";
 
@@ -24,21 +23,19 @@ export class AIService {
       YÊU CẦU QUAN TRỌNG VỀ THỜI LƯỢNG:
       - Thời lượng mục tiêu: ${duration} giây (${durationLabel}).
       - Tổng độ dài kịch bản phải xấp xỉ ${estimatedWordCount} từ.
-      - Bạn phải kiểm soát số lượng beats và độ dài câu chữ sao cho khi đọc lên sẽ khớp với ${duration} giây.
 
       NHIỆM VỤ:
       1. Viết kịch bản video chia làm các phân đoạn (beats).
       2. MỖI PHÂN ĐOẠN PHẢI LÀ MỘT CÂU PHỤ ĐỀ HOÀN CHỈNH, NGẮN GỌN (tối đa 10-12 từ).
-      3. Đảm bảo ngôn từ Tiếng Việt chuẩn xác tuyệt đối, không sai chính tả.
-      4. TRÍCH XUẤT THÔNG ĐIỆP CHÍNH: Nếu lời nhắc có chứa nội dung cụ thể, bạn PHẢI biến nó thành câu phụ đề đắt giá nhất.
+      3. Đảm bảo ngôn từ Tiếng Việt chuẩn xác tuyệt đối.
       
       PHÂN LOẠI BEATS:
-      - HOOK: Câu đầu tiên gây sốc hoặc tò mò (0-3s).
-      - BODY: Diễn giải nội dung chính, mỗi beat là một ý tưởng hình ảnh.
-      - PAYOFF: Câu chốt giá trị hoặc kết quả.
-      - CTA: Kêu gọi hành động (Follow, Tim, Mua ngay) - Beat cuối cùng.
+      - HOOK: Câu đầu tiên gây sốc (0-3s).
+      - BODY: Diễn giải nội dung.
+      - PAYOFF: Câu chốt kết quả.
+      - CTA: Kêu gọi hành động.
 
-      ĐỊNH DẠNG TRẢ VỀ: JSON array các object { type, content, duration }. Tổng duration của các beat cộng lại phải xấp xỉ ${duration}.`,
+      ĐỊNH DẠNG TRẢ VỀ: JSON array các object { type, content, duration }.`,
       config: {
         responseMimeType: 'application/json',
         responseSchema: {
@@ -66,13 +63,20 @@ export class AIService {
 
   async generateVideo(config: ProjectConfig, referenceImageBase64?: string) {
     const ai = this.getAI();
-    const prompt = `High-end cinematic video. Scene: ${config.prompt}. Style: ${config.seoKeywords}. Cinematography: Masterpiece, 8k, fluid motion, professional lighting.`;
+    
+    // Nâng cấp Prompt để giữ tính đồng nhất vật thể/giày
+    let finalPrompt = `Cinematic high-end video showcase. Scene: ${config.prompt}. Style: ${config.seoKeywords}. Cinematography: Masterpiece, 8k, professional product lighting, fluid and realistic camera movement.`;
+    
+    if (referenceImageBase64) {
+      // Prompt đặc biệt để AI tập trung vào việc giữ nguyên thiết kế từ ảnh gốc
+      finalPrompt = `STRICT PRODUCT CONSISTENCY: Maintain the exact design, colorway, material textures, and silhouette of the product/shoes shown in the reference image. ${finalPrompt} The item in the video must be identical to the starting frame. No design changes allowed. High-fidelity rendering.`;
+    }
     
     const veoAspectRatio = config.aspectRatio === '16:9' ? '16:9' : '9:16';
 
     const videoParams: any = {
       model: 'veo-3.1-fast-generate-preview',
-      prompt: prompt,
+      prompt: finalPrompt,
       config: {
         numberOfVideos: 1,
         resolution: config.resolution,
@@ -80,9 +84,7 @@ export class AIService {
       }
     };
 
-    // Nếu có ảnh tham khảo, truyền vào tham số 'image' để đảm bảo đồng nhất
     if (referenceImageBase64) {
-      // Tách mimeType và data từ chuỗi base64 (ví dụ: data:image/png;base64,iVBOR...)
       const matches = referenceImageBase64.match(/^data:([^;]+);base64,(.+)$/);
       if (matches && matches.length === 3) {
         videoParams.image = {
@@ -104,7 +106,7 @@ export class AIService {
     const ai = this.getAI();
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: `Hãy đọc đoạn văn Tiếng Việt này thật truyền cảm, tự nhiên, ngắt nghỉ đúng nhịp để khớp hoàn hảo với phụ đề chạy trên video: "${text}"` }] }],
+      contents: [{ parts: [{ text: `Hãy đọc đoạn văn Tiếng Việt này thật truyền cảm: "${text}"` }] }],
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: {

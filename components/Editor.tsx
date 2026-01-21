@@ -96,7 +96,7 @@ export const Editor: React.FC<EditorProps> = ({
           </div>
 
           <div className="space-y-3">
-            <label className="text-sm font-medium text-slate-400">Tỷ lệ khung hình (Flexible)</label>
+            <label className="text-sm font-medium text-slate-400">Tỷ lệ khung hình</label>
             <div className="flex flex-wrap gap-2">
               {ASPECT_RATIOS.map((ratio) => (
                 <button
@@ -136,11 +136,11 @@ export const Editor: React.FC<EditorProps> = ({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-400">Lời nhắc Video (Phụ đề sẽ bám sát nội dung này)</label>
+            <label className="text-sm font-medium text-slate-400">Lời nhắc Video</label>
             <textarea 
               value={project.prompt}
               onChange={(e) => setProject({...project, prompt: e.target.value})}
-              placeholder="Ví dụ: Một cô gái đang pha cà phê trong ánh nắng sớm, vui vẻ nhìn vào máy quay..."
+              placeholder="Ví dụ: Cận cảnh đôi giày sneaker đang chạy trên mặt nước, nước bắn tung tóe dưới ánh đèn neon..."
               className="w-full h-32 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:border-blue-500 outline-none transition resize-none text-sm leading-relaxed"
             />
           </div>
@@ -150,24 +150,32 @@ export const Editor: React.FC<EditorProps> = ({
             <input 
               value={project.seoKeywords}
               onChange={(e) => setProject({...project, seoKeywords: e.target.value})}
-              placeholder="ví dụ: #morningcoffee, #aesthetic, #vietnam"
+              placeholder="ví dụ: #sneakers, #nike, #aesthetic"
               className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 focus:border-blue-500 outline-none transition"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-400">Ảnh tham khảo (Tải ảnh gốc & Giữ nhân vật)</label>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-slate-400">Ảnh tham khảo (Gốc)</label>
+              {refImage && (
+                <span className="text-[10px] font-bold text-green-400 flex items-center gap-1 animate-pulse">
+                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full"></span>
+                  CHẾ ĐỘ ĐỒNG NHẤT VẬT THỂ BẬT
+                </span>
+              )}
+            </div>
             <div className="flex gap-4 items-center">
               <div className="relative flex-1 group">
                 <label className="block h-32 border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center hover:border-blue-500 cursor-pointer transition overflow-hidden bg-slate-900/50">
                   {refImage ? (
-                    <img src={refImage} alt="Reference" className="w-full h-full object-cover" />
+                    <img src={refImage} alt="Reference" className="w-full h-full object-contain bg-black" />
                   ) : (
                     <div className="flex flex-col items-center gap-2">
                       <svg className="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                      <span className="text-xs text-slate-500">Kéo thả hoặc chọn ảnh gốc</span>
+                      <span className="text-xs text-slate-500">Tải ảnh giày/sản phẩm để giữ thiết kế</span>
                     </div>
                   )}
                   <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
@@ -178,7 +186,6 @@ export const Editor: React.FC<EditorProps> = ({
                     <button 
                       onClick={downloadOriginalImage}
                       className="p-2 bg-blue-600/90 hover:bg-blue-500 text-white rounded-lg shadow-lg transition-transform hover:scale-110"
-                      title="Tải ảnh gốc"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -187,7 +194,6 @@ export const Editor: React.FC<EditorProps> = ({
                     <button 
                       onClick={removeImage}
                       className="p-2 bg-red-600/90 hover:bg-red-500 text-white rounded-lg shadow-lg transition-transform hover:scale-110"
-                      title="Xóa ảnh"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -197,6 +203,7 @@ export const Editor: React.FC<EditorProps> = ({
                 )}
               </div>
             </div>
+            {refImage && <p className="text-[10px] text-slate-500 italic text-center mt-1">Hệ thống Veo 3 sẽ sử dụng ảnh này làm khung hình gốc để đảm bảo đôi giày không bị biến đổi thiết kế.</p>}
           </div>
 
           <button 
@@ -205,7 +212,7 @@ export const Editor: React.FC<EditorProps> = ({
             className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl font-bold shadow-lg hover:scale-[1.01] active:scale-[0.99] transition disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {isGenerating ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>}
-            {isGenerating ? `Tạo Kịch Bản ${project.duration}s` : 'Tạo Kịch Bản Phụ Đề AI'}
+            {isGenerating ? `Đang phân tích kịch bản...` : 'Tạo Kịch Bản Phụ Đề AI'}
           </button>
         </div>
       )}
@@ -255,13 +262,6 @@ export const Editor: React.FC<EditorProps> = ({
                   <p className="font-bold text-sm">{voice.name}</p>
                   <p className="text-[10px] text-slate-400 uppercase font-medium tracking-tight mt-0.5">{voice.style}</p>
                 </div>
-                {project.voiceId === voice.id && (
-                  <div className="flex gap-1 items-end h-4">
-                    <div className="w-1 bg-blue-500 h-2 animate-bounce"></div>
-                    <div className="w-1 bg-blue-500 h-4 animate-bounce [animation-delay:-0.2s]"></div>
-                    <div className="w-1 bg-blue-500 h-3 animate-bounce [animation-delay:-0.4s]"></div>
-                  </div>
-                )}
               </div>
             ))}
           </div>
